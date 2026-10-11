@@ -8,31 +8,30 @@ This is **not evidence of artificial consciousness or validated self-recognition
 
 ## A simple world. Many possible worlds.
 
-The colored square agents are **intentionally simple visual markers**, not a limitation of the underlying simulation. The browser viewer (`public/`), world and agent logic (`src/world/`), and neural-learning implementation (`src/neural/`) are separate parts of the project. Developers can use this small experiment as a starting point for autonomous-character prototypes, simulations, or educational projects.
+Layer 1+ is a **working experimental neural-agent simulation**, not a finished game engine. Its simple square markers keep the original visualization lightweight while the code explores neural policies, reward-driven learning, interaction, curiosity, and inheritance. The visual appearance can be changed independently by adapting the Canvas viewer; new gameplay, simulation rules, and communication mechanisms require additional implementation.
 
-### Four possible directions — concept illustrations
+### Inspiration for developers
 
-**These illustrations are original concept art, not screenshots or implemented game features.** Each scenario would require additional graphics, behavior rules, and game-specific development.
+The following are **original, high-detail concept illustrations** showing what developers *might* build from the experimental foundation. **They are not screenshots, current features, or evidence that these scenarios have been implemented.** None of this artwork is part of the running viewer.
 
 | Living village | Ecosystem simulation |
 |:---:|:---:|
-| ![Concept: tiny villagers in a settlement](docs/images/concept-village.svg) | ![Concept: wildlife and habitats around a pond](docs/images/concept-ecosystem.svg) |
-| Small characters with individual needs, relationships, and activities. | Animals reacting to food, hazards, and environmental change. |
+| ![Concept illustration: a detailed riverside village with small inhabitants](docs/images/concept-village.webp) | ![Concept illustration: diverse wildlife in a mountainous lakeside ecosystem](docs/images/concept-ecosystem.webp) |
+| Develop inhabitants with needs, relationships, resource use, and local interactions. | Extend the environment with species, habitats, competition, and changing resources. |
 
 | Colony simulation | Robot world |
 |:---:|:---:|
-| ![Concept: underground autonomous colony](docs/images/concept-colony.svg) | ![Concept: robots exploring a constructed environment](docs/images/concept-robots.svg) |
-| Populations with new cooperation and role mechanics. | Agents with neural policies adapted to simulated robots. |
+| ![Concept illustration: autonomous settlers and structures in an off-world colony](docs/images/concept-colony.webp) | ![Concept illustration: small autonomous robots in a modern research facility](docs/images/concept-robots.webp) |
+| Explore collective behavior, specialization, and coordination in a settlement or colony. | Adapt sensors and actions for simulated robots and tasks in more complex environments. |
 
-### Ideas for developers
+### Possible extensions
 
-- **Replace squares with sprites or animated characters.** Begin with the Canvas renderer in `public/viewer.js`. Graphical changes do not automatically require changes to neural-network logic.
-- **Build a village or settlement.** Add buildings, resources, goals, schedules, social interactions, and reward rules appropriate to the new setting.
-- **Create ecosystems or colonies.** Study competition, adaptation, and cooperation by changing sensors, actions, environmental constraints, and agent rewards.
-- **Prototype robot behaviors.** Keep the basic neural-agent approach, but design new simulated sensors, movements, and tasks.
-- **Make educational demonstrations.** Visualize learning, evolution-like inheritance, reward shaping, and emergent-looking behavior while retaining a clear distinction between simulation and scientific evidence.
+- **Visuals:** Replace square markers with detailed sprites, animations, or other renderers without mistaking graphic fidelity for intelligence.
+- **New worlds:** Build village, ecosystem, colony, or robot simulations by extending sensors, actions, rewards, physics, and world rules.
+- **Research and education:** Visualize neural learning, population dynamics, exploration, and behavior while measuring results rather than assuming emergent intelligence.
+- **Communication experiments:** A future derivative might test agent-to-agent or AI-to-AI communication inside a controlled simulation, but no such integration with an external neural network is implemented or claimed here.
 
-**What the release is not:** a complete game engine, validated behavioral model, or production-ready framework. Features such as inventories, buildings, pathfinding, animations, save/load, and richer graphics must be implemented separately. The original author does not plan to develop further levels; independent forks and adaptations are welcome under the [MIT license](LICENSE).
+The code is released as a small **foundation to explore and extend**, not as a claim that any of the illustrated scenarios are already achievable without additional work. The original author does not plan further levels; independent development and forks are welcome under the [MIT license](LICENSE).
 
 ## Quick start
 
