@@ -118,6 +118,7 @@ The tests check basic neural/simulation contracts, English localization, and key
 - [Architecture](docs/ARCHITECTURE.md)
 - [Ethics](docs/ETHICS.md)
 - [Original roadmap / future ideas](docs/ROADMAP.md)
+- [Future Development Guide (PDF)](docs/Layer1-Neural-World-Future-Development-Guide.pdf) - Proposed Village, Nature, Colony and Robot extensions plus game-engine bridges; not implemented.
 - [Guide for independent contributors](docs/EXTENDING.md)
 - [GitHub publishing guide](docs/PUBLISHING.md)
 - [Validation results and limits](docs/VALIDATION.md)
