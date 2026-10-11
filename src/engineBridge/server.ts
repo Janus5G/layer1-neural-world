@@ -65,6 +65,7 @@ export function startEngineBridge(options: BridgeOptions = {}): WebSocketServer 
   });
 
   wss.on("connection", (ws) => {
+    ws.on("error", () => {});
     if (wss.clients.size > BRIDGE_LIMITS.maxClients) {
       ws.close(1008, "Connection limit reached");
       return;
