@@ -4,6 +4,7 @@ import path from "node:path";
 import { WebSocketServer, WebSocket } from "ws";
 import { Sim, DEFAULT_CONFIG } from "./world/world.js";
 import { DEFAULT_OLLAMA_CONFIG, type OllamaConfig } from "./cognition/ollama.js";
+import { startEngineBridge } from "./engineBridge/server.js";
 
 let ollamaConfig: OllamaConfig = { ...DEFAULT_OLLAMA_CONFIG };
 const sim = new Sim(DEFAULT_CONFIG, ollamaConfig);
@@ -104,3 +105,10 @@ server.listen(PORT, () => {
     }`,
   );
 });
+// Opt-in loopback-only engine interface. Not part of the default world simulation.
+if (process.env.ENGINE_BRIDGE_ENABLED === "1") {
+  const port = Number(process.env.ENGINE_BRIDGE_PORT ?? "9090");
+  const bridge = startEngineBridge({ port });
+  bridge.on("listening", () => console.log(`Engine Bridge: ws://127.0.0.1:${port}/engine/ws`));
+  bridge.on("error", (err) => console.error("Engine Bridge failed:", err));
+}

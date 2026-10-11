@@ -33,6 +33,17 @@ The following are **original, high-detail concept illustrations** showing what d
 
 The code is released as a small **foundation to explore and extend**, not as a claim that any of the illustrated scenarios are already achievable without additional work. The original author does not plan further levels; independent development and forks are welcome under the [MIT license](LICENSE).
 
+## Unity and Godot Engine Bridge (optional)
+
+The project now includes an **experimental local neural-action bridge** that game developers can use without running the original artificial-life world. Unity or Godot owns its own scene, physics, objects, sensors and rewards; the standalone TypeScript server provides a per-agent neural policy through a loopback-only WebSocket connection. **This is a developer interface, not a validated AI or a completed game engine.**
+
+```sh
+npm ci
+npm run bridge
+```
+
+Connect your desktop game to `ws://127.0.0.1:9090/engine/ws`. The feature is off by default in the normal `npm start` mode, uses no Ollama, and starts with untrained random neural weights. Low-load examples default to learning disabled. See the [Engine Bridge protocol and limitations](docs/ENGINE_BRIDGE.md), [Unity example](examples/unity/README.md), and [Godot 4 example](examples/godot/README.md). Neither game-engine example has been verified inside its native editor.
+
 ## Quick start
 
 **Hardware and temperature note:** Per-agent neural training can sustain substantial CPU load. An optional local Ollama model may add heavy processing when GPU acceleration is unavailable. On thermally constrained computers, lower the simulation workload, monitor temperatures, and stop if the system becomes excessively hot. You do not need Ollama to run the basic simulation.
