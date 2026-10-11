@@ -124,3 +124,47 @@ test("cross-site browser Origin headers are rejected", async () => {
     hostile.terminate();
   } finally { await h.close(); }
 });
+
+
+test("maxPayload boundary rejects oversized frames without killing the bridge", { timeout: 10000 }, async () => {
+  const h = await openHarness();
+  try {
+    const c = await h.connect();
+    const hello = await c.next();
+    assert.equal(hello.type, "hello");
+
+    const maxBytes = hello.limits.maxMessageBytes;
+    const prefix = '{"type":"unsupported","padding":"';
+    const suffix = '"}';
+    const paddingBytes = maxBytes - Buffer.byteLength(prefix + suffix);
+    assert.ok(paddingBytes > 0);
+
+    // Exactly at the WebSocket payload cap: the connection must stay usable.
+    const atLimit = prefix + "x".repeat(paddingBytes) + suffix;
+    assert.equal(Buffer.byteLength(atLimit), maxBytes);
+    c.ws.send(atLimit);
+    assert.equal((await c.next()).code, "unknown_type");
+    assert.equal(c.ws.readyState, WebSocket.OPEN);
+
+    // One byte above the cap: ws must close the offending socket, not crash Node.
+    const oversized = prefix + "x".repeat(paddingBytes + 1) + suffix;
+    assert.equal(Buffer.byteLength(oversized), maxBytes + 1);
+    c.ws.on("error", () => {});
+    const closed = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("Oversized socket did not close")), 3000);
+      c.ws.once("close", code => { clearTimeout(timer); resolve(code); });
+    });
+    c.ws.send(oversized);
+    assert.equal(await closed, 1009, "Payload exceeded should close with message-too-big");
+
+    // A new game client can still connect and receive a neural action.
+    const healthy = await h.connect();
+    assert.equal((await healthy.next()).type, "hello");
+    assert.equal((await healthy.send({ ...create, learn: false })).type, "created");
+    const action = await healthy.send({ type: "step", agentId: create.agentId, observation: [0,0,0,0,0,0] });
+    assert.equal(action.type, "action");
+    assert.ok(create.actions.includes(action.name));
+  } finally {
+    await h.close();
+  }
+});
