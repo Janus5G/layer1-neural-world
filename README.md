@@ -1,5 +1,11 @@
 # Layer 1+ — Neural Artificial Life Sandbox
 
+[![Engine Bridge regression](https://github.com/Janus5G/layer1-neural-world/actions/workflows/engine-bridge-tests.yml/badge.svg?branch=main)](https://github.com/Janus5G/layer1-neural-world/actions/workflows/engine-bridge-tests.yml)
+[![MIT License](https://img.shields.io/badge/License-MIT-28a745.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-43853D?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Engine Bridge: experimental](https://img.shields.io/badge/Engine_Bridge-Experimental-orange)](docs/ENGINE_BRIDGE.md)
+
 A small **experimental artificial-life simulation** with embodied neural agents in a browser-based world. Agents use hand-written neural networks to select actions, receive rewards, move around, interact, reproduce, and explore. An **optional local Ollama model** generates short agent narratives and ideas.
 
 **Status:** This repository contains the original experimental **Layer 1 / 1+ source**, translated into English. It is released **as-is**. The author does **not** plan additional levels or ongoing feature development; community forks are welcome. Later layers in [the roadmap](docs/ROADMAP.md) are historical ideas, **not built features**.
@@ -133,6 +139,16 @@ The tests check basic neural/simulation contracts, English localization, and key
 - [Guide for independent contributors](docs/EXTENDING.md)
 - [GitHub publishing guide](docs/PUBLISHING.md)
 - [Validation results and limits](docs/VALIDATION.md)
+
+## Contributors and acknowledgements
+
+**Original project creator, copyright holder, and maintainer:** [Janus Rokkjær (Janus5G)](https://github.com/Janus5G).
+
+**AI-assisted contributor — ChatGPT (OpenAI):** assisted with English-language documentation, the developer-facing README and examples, the optional Unity/Godot Engine Bridge, and related regression tests. These are acknowledged as AI-assisted contributions, not as authorship of the original artificial-life experiment. GitHub's contributors graph reflects commit author identities and does not automatically list ChatGPT as a separate GitHub user.
+
+**Additional assistance:** GitHub Copilot proposed a fix for the Engine Bridge WebSocket error-handling review finding.
+
+All project maintenance and publication decisions remain with the repository owner. These acknowledgements do not imply endorsement, certification, or independent validation by OpenAI or GitHub.
 
 ## License
 
