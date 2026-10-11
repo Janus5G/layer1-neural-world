@@ -6,7 +6,37 @@ A small **experimental artificial-life simulation** with embodied neural agents 
 
 This is **not evidence of artificial consciousness or validated self-recognition**, and is not a production-grade or peer-reviewed system. The modeled pleasure, affect, curiosity, and mirror-mark behavior are simulation constructs. See [Ethics](docs/ETHICS.md).
 
+## A simple world. Many possible worlds.
+
+The colored square agents are **intentionally simple visual markers**, not a limitation of the underlying simulation. The browser viewer (`public/`), world and agent logic (`src/world/`), and neural-learning implementation (`src/neural/`) are separate parts of the project. Developers can use this small experiment as a starting point for autonomous-character prototypes, simulations, or educational projects.
+
+### Four possible directions — concept illustrations
+
+**These illustrations are original concept art, not screenshots or implemented game features.** Each scenario would require additional graphics, behavior rules, and game-specific development.
+
+| Living village | Ecosystem simulation |
+|:---:|:---:|
+| ![Concept: tiny villagers in a settlement](docs/images/concept-village.svg) | ![Concept: wildlife and habitats around a pond](docs/images/concept-ecosystem.svg) |
+| Small characters with individual needs, relationships, and activities. | Animals reacting to food, hazards, and environmental change. |
+
+| Colony simulation | Robot world |
+|:---:|:---:|
+| ![Concept: underground autonomous colony](docs/images/concept-colony.svg) | ![Concept: robots exploring a constructed environment](docs/images/concept-robots.svg) |
+| Populations with new cooperation and role mechanics. | Agents with neural policies adapted to simulated robots. |
+
+### Ideas for developers
+
+- **Replace squares with sprites or animated characters.** Begin with the Canvas renderer in `public/viewer.js`. Graphical changes do not automatically require changes to neural-network logic.
+- **Build a village or settlement.** Add buildings, resources, goals, schedules, social interactions, and reward rules appropriate to the new setting.
+- **Create ecosystems or colonies.** Study competition, adaptation, and cooperation by changing sensors, actions, environmental constraints, and agent rewards.
+- **Prototype robot behaviors.** Keep the basic neural-agent approach, but design new simulated sensors, movements, and tasks.
+- **Make educational demonstrations.** Visualize learning, evolution-like inheritance, reward shaping, and emergent-looking behavior while retaining a clear distinction between simulation and scientific evidence.
+
+**What the release is not:** a complete game engine, validated behavioral model, or production-ready framework. Features such as inventories, buildings, pathfinding, animations, save/load, and richer graphics must be implemented separately. The original author does not plan to develop further levels; independent forks and adaptations are welcome under the [MIT license](LICENSE).
+
 ## Quick start
+
+**Hardware and temperature note:** Per-agent neural training can sustain substantial CPU load. An optional local Ollama model may add heavy processing when GPU acceleration is unavailable. On thermally constrained computers, lower the simulation workload, monitor temperatures, and stop if the system becomes excessively hot. You do not need Ollama to run the basic simulation.
 
 **Requirements:** Node.js 20+ and npm. Optional: Ollama and a local compatible model for generated agent text.
 
