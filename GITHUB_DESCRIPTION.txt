@@ -1,0 +1,1 @@
+Experimental local artificial-life simulation with neural agents, curiosity, a mirror-mark task and optional Ollama narration. MIT licensed.

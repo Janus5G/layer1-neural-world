@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Layer 1+ — Neural World</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="layout">
+  <canvas id="c"></canvas>
+  <aside class="side">
+    <header>
+      <h1>Layer 1+</h1>
+      <p class="hint">Ollama · mirror-mark task · brain activity · ideas</p>
+      <div class="controls">
+        <button id="pause">Pause</button>
+        <button id="reset" class="danger">Reset</button>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>Ollama</h2>
+      <label>Host <input id="ollamaHost" /></label>
+      <label>Model <input id="ollamaModel" /></label>
+      <div class="row" style="margin-top:8px">
+        <label style="display:flex;align-items:center;gap:6px;color:var(--text);flex:1">
+          <input type="checkbox" id="ollamaEnabled" style="width:auto" /> Enabled
+        </label>
+      </div>
+      <button id="ollamaSave" style="margin-top:8px">Save</button>
+      <div id="ollamaStats" class="hint" style="margin-top:8px"></div>
+    </section>
+
+    <section class="card">
+      <h2>World</h2>
+      <div id="stats" class="kv"></div>
+    </section>
+
+    <section class="card">
+      <h2>Population</h2>
+      <canvas id="popChart" width="320" height="70"></canvas>
+    </section>
+
+    <section class="card">
+      <h2>Selected agent</h2>
+      <div id="selected" class="hint">Click an agent to inspect it.</div>
+    </section>
+
+    <section class="card">
+      <h2>Brain activity</h2>
+      <canvas id="brainCanvas" width="320" height="180"></canvas>
+      <div class="hint" style="margin-top:6px">
+        Rows: input · h1 · h2 · logits · policy
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Ideas</h2>
+      <div id="ideas" class="hint">None yet.</div>
+    </section>
+
+    <section class="card">
+      <h2>Top agents</h2>
+      <div id="agents"></div>
+    </section>
+
+    <section class="card">
+      <h2>Events</h2>
+      <div id="log" class="log"></div>
+    </section>
+  </aside>
+</div>
+<script src="/viewer.js"></script>
+</body>
+</html>
