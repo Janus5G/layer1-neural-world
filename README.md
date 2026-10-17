@@ -83,11 +83,13 @@ If your model name differs, enter its installed identifier. The example tag abov
 ## Experimental Linux CUDA training and local MCP (v1.2.0-rc.1)
 
 This release-candidate branch adds an **optional**, Linux-only PyTorch CUDA
-training worker. It does not replace the original CPU baseline. The world,
-sensors, action selection and neural forward passes still use TypeScript on
-the CPU, while the agent training updates can run in a separate CUDA process.
-**Hardware performance and thermal improvements are not yet verified.**
-It is not a complete GPU neural-runtime migration.
+neural worker. In CUDA mode, neural forward passes and training are offloaded
+to PyTorch on the NVIDIA GPU. Sensors, physics and action sampling still run
+on CPU. The original CPU simulation remains available unchanged.
+
+GPU mode observes a pre-action world snapshot for each tick instead of the
+reference implementation's sequential sensing, so agent outcomes may differ.
+**Performance, thermal improvements and parity are not yet verified on hardware.**
 
 Inspect your NVIDIA GPU and the driver-supported CUDA version before any
 changes:
