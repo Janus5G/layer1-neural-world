@@ -14,6 +14,7 @@ export class CudaTrainer {
   private nextId=1;
   private pending=new Map<number,Pending>();
   private buffer="";
+  private registered=new Set<number>();
   readonly device="cuda";
   private constructor(proc:ChildProcessWithoutNullStreams) {
     this.process=proc;
@@ -81,6 +82,36 @@ export class CudaTrainer {
       }
     }
     return trained;
+  }
+  async inferBatch(agents:{id:number;brain:Brain;state:Float32Array}[]):Promise<Map<number,{state:Float32Array;probs:Float32Array;value:number}>> {
+    const result=new Map<number,{state:Float32Array;probs:Float32Array;value:number}>();
+    if(agents.length>128)throw new Error("CUDA inference exceeds agent capacity");
+    const activeIds=agents.map(a=>a.id);
+    const active=new Set(activeIds);
+    for(const id of this.registered)if(!active.has(id))this.registered.delete(id);
+    for(let i=0;i<agents.length;i+=16){
+      const subset=agents.slice(i,i+16);
+      const jobs=subset.map(a=>({
+        id:a.id,state:Array.from(a.state),
+        ...(!this.registered.has(a.id)?{layers:layers(a.brain).map(l=>({W:Array.from(l.W),b:Array.from(l.b)}))}:{})
+      }));
+      const response=await this.request({method:"infer_batch",jobs,...(i===0?{activeIds}:{})},30000);
+      if(!Array.isArray(response.results)||response.results.length!==subset.length)throw new Error("CUDA inference count mismatch");
+      for(let k=0;k<subset.length;k++){
+        const output=response.results[k],a=subset[k];
+        if(output.id!==a.id||!Array.isArray(output.probs)||output.probs.length!==a.brain.numActions||
+           output.probs.some((p:unknown)=>typeof p!=="number"||!Number.isFinite(p)||p<0||p>1)||
+           typeof output.value!=="number"||!Number.isFinite(output.value))
+          throw new Error("Invalid CUDA inference result");
+        result.set(a.id,{state:a.state,probs:Float32Array.from(output.probs),value:output.value});
+      }
+      for(const a of subset)this.registered.add(a.id);
+    }
+    return result;
+  }
+  invalidate():void{
+    this.registered.clear();
+    void this.request({method:"invalidate"},15000).catch(()=>{this.close();});
   }
   close(){this.failAll(new Error("CUDA worker closed"));this.process.kill("SIGTERM");}
 }
