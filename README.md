@@ -80,7 +80,7 @@ If Ollama is not already running, start its service according to your operating 
 
 If your model name differs, enter its installed identifier. The example tag above is not guaranteed to exist for every Ollama installation. Performance depends on hardware and model size.
 
-## Experimental Linux CUDA training and local MCP (v1.2.0-rc.1)
+## Optional Linux CUDA and local MCP (v1.2.0)
 
 This release-candidate branch adds an **optional**, Linux-only PyTorch CUDA
 neural worker. In CUDA mode, neural forward passes and training are offloaded
@@ -89,7 +89,7 @@ on CPU. The original CPU simulation remains available unchanged.
 
 GPU mode observes a pre-action world snapshot for each tick instead of the
 reference implementation's sequential sensing, so agent outcomes may differ.
-**Performance, thermal improvements and parity are not yet verified on hardware.**
+**CUDA execution was verified on an RTX 5050 with a 20-minute run (maximum observed GPU 64 °C); CPU temperatures, 1× simulation speed and parity remain unverified.**
 
 Inspect your NVIDIA GPU and the driver-supported CUDA version before any
 changes:
@@ -120,7 +120,7 @@ authorized ChromaNeural capability. Registration in RoboForge, the existing
 managed-grant model and DeepSeek Janus image-generation integration remain
 separate acceptance steps.
 
-See [CUDA and MCP integration guide](docs/CUDA_MCP_INTEGRATION.md) for
+See [v1.2.0 release evidence](docs/RELEASE_V1.2.0.md) and [CUDA and MCP integration guide](docs/CUDA_MCP_INTEGRATION.md) for
 architecture, safety limits, verification status and Linux setup.
 
 ## What's in Level 1+
