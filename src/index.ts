@@ -41,7 +41,7 @@ app.post("/api/admin/ollama", (req, res) => {
 app.post("/api/control", (req, res) => {
   const action = req.body?.action;
   if (action === "pause") sim.paused = true;
-  else if (action === "resume") sim.paused = false;
+  else if (action === "resume") { if(sim.cudaError) return res.status(409).json({ok:false,error:"CUDA failure requires process restart"}); sim.paused = false; }
   else if (action === "reset") { if(sim.cudaBusy) return res.status(409).json({ok:false,error:"CUDA training in progress"}); sim.reset(); }
   else return res.status(400).json({ ok: false });
   res.json({ ok: true });
