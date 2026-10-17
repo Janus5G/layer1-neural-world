@@ -80,6 +80,49 @@ If Ollama is not already running, start its service according to your operating 
 
 If your model name differs, enter its installed identifier. The example tag above is not guaranteed to exist for every Ollama installation. Performance depends on hardware and model size.
 
+## Optional Linux CUDA and local MCP (v1.2.0)
+
+This release-candidate branch adds an **optional**, Linux-only PyTorch CUDA
+neural worker. In CUDA mode, neural forward passes and training are offloaded
+to PyTorch on the NVIDIA GPU. Sensors, physics and action sampling still run
+on CPU. The original CPU simulation remains available unchanged.
+
+GPU mode observes a pre-action world snapshot for each tick instead of the
+reference implementation's sequential sensing, so agent outcomes may differ.
+**CUDA execution was verified on an RTX 5050 with a 20-minute run (maximum observed GPU 64 °C); CPU temperatures, 1× simulation speed and parity remain unverified.**
+
+Inspect your NVIDIA GPU and the driver-supported CUDA version before any
+changes:
+
+```sh
+python3 scripts/setup_gpu.py
+```
+
+To consent to installing a compatible CUDA-enabled PyTorch build inside this
+repository's private `.venv` (no system-driver installation), run:
+
+```sh
+python3 scripts/setup_gpu.py --install
+npm ci
+npm run start:cuda
+```
+
+If a supported GPU or wheel cannot be verified, installation stops rather
+than silently switching back to high-load CPU training. To run the unchanged
+CPU reference path, use `npm start`. The hardware checker and CUDA worker
+are independent of optional Ollama inference.
+
+A separate local-only, read-only MCP stdio adapter is available with
+`npm run mcp:stdio`. It exposes only `layer1_status_v1` and
+`layer1_brain_trace_v1`; it cannot mutate or start a simulation. This is an
+**integration candidate**, not an already registered RoboForge tool or an
+authorized ChromaNeural capability. Registration in RoboForge, the existing
+managed-grant model and DeepSeek Janus image-generation integration remain
+separate acceptance steps.
+
+See [v1.2.0 release evidence](docs/RELEASE_V1.2.0.md) and [CUDA and MCP integration guide](docs/CUDA_MCP_INTEGRATION.md) for
+architecture, safety limits, verification status and Linux setup.
+
 ## What's in Level 1+
 
 - Small neural network per agent: 40 inputs, two hidden layers of 48 neurons, 11 actions, and policy/value heads.

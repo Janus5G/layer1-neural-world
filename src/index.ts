@@ -3,11 +3,19 @@ import http from "node:http";
 import path from "node:path";
 import { WebSocketServer, WebSocket } from "ws";
 import { Sim, DEFAULT_CONFIG } from "./world/world.js";
+import { CudaTrainer } from "./neural/cudaTrainer.js";
 import { DEFAULT_OLLAMA_CONFIG, type OllamaConfig } from "./cognition/ollama.js";
 import { startEngineBridge } from "./engineBridge/server.js";
 
 let ollamaConfig: OllamaConfig = { ...DEFAULT_OLLAMA_CONFIG };
-const sim = new Sim(DEFAULT_CONFIG, ollamaConfig);
+const gpuRequested=process.env.LAYER1_NEURAL_BACKEND==="cuda";
+const gpuTickRequested=Number(process.env.LAYER1_GPU_TICK_HZ??10);
+const gpuTickHz=Number.isFinite(gpuTickRequested)&&gpuTickRequested>=1&&gpuTickRequested<=20 ? gpuTickRequested : 10;
+const sim = new Sim(gpuRequested?{...DEFAULT_CONFIG,maxPopulation:32}:DEFAULT_CONFIG, ollamaConfig);
+if (process.env.LAYER1_NEURAL_BACKEND === "cuda") {
+  try {sim.cudaTrainer = await CudaTrainer.start();console.log("CUDA training enabled");}
+  catch(e){sim.cudaError=String(e).slice(0,220);console.error("CUDA unavailable; refusing silent fallback:",e);process.exit(2);}
+}
 
 const app = express();
 app.use(express.json({ limit: "128kb" }));
@@ -36,14 +44,14 @@ app.post("/api/admin/ollama", (req, res) => {
 app.post("/api/control", (req, res) => {
   const action = req.body?.action;
   if (action === "pause") sim.paused = true;
-  else if (action === "resume") sim.paused = false;
-  else if (action === "reset") sim.reset();
+  else if (action === "resume") { if(sim.cudaError) return res.status(409).json({ok:false,error:"CUDA failure requires process restart"}); sim.paused = false; }
+  else if (action === "reset") { if(sim.cudaBusy) return res.status(409).json({ok:false,error:"CUDA training in progress"}); sim.reset(); }
   else return res.status(400).json({ ok: false });
   res.json({ ok: true });
 });
 
 app.get("/api/status", (_req, res) => {
-  res.json({ ok: true, paused: sim.paused, t: sim.world.t, pop: sim.world.agents.length });
+  res.json({ ok: true, paused: sim.paused, t: sim.world.t, pop: sim.world.agents.length, neuralBackend: sim.cudaTrainer ? "cuda" : "cpu", cudaError: sim.cudaError });
 });
 
 // ---- Brain trace ----
@@ -74,14 +82,17 @@ wss.on("connection", (ws) => {
 });
 
 // Sim-loop: 20 Hz
-const TICK_HZ = 20;
+const TICK_HZ = gpuRequested ? gpuTickHz : 20;
 const tickMs = 1000 / TICK_HZ;
 let last = performance.now();
+let tickBusy=false;
 setInterval(() => {
+  if(tickBusy)return;
+  tickBusy=true;
   const now = performance.now();
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
-  sim.step(dt);
+  void sim.stepCuda(dt).finally(()=>{tickBusy=false;});
 }, tickMs);
 
 // Cognition loop: runs independently
@@ -95,7 +106,7 @@ setInterval(() => {
 }, 100);
 
 const PORT = Number(process.env.PORT ?? 8787);
-server.listen(PORT, () => {
+server.listen(PORT, "127.0.0.1", () => {
   console.log(`Layer 1+ is running at http://localhost:${PORT}`);
   console.log(
     `  Ollama: ${

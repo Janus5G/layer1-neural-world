@@ -1,4 +1,5 @@
 import { sense } from "./sensors.js";
+import type { CudaTrainer } from "../neural/cudaTrainer.js";
 import type { Agent, Event, World } from "./agent.js";
 import { crossoverGenome, makeAgent } from "./agent.js";
 import { ACTIONS } from "./types.js";
@@ -64,6 +65,9 @@ export class Sim {
   private deliberationCooldowns = new Map<number, number>();
   private traceAgentId: number | null = null;
   private cognitionRunning = false;
+  cudaTrainer: CudaTrainer | null = null;
+  cudaError: string | null = null;
+  cudaBusy = false;
 
   constructor(cfg: Config = DEFAULT_CONFIG, oc: OllamaConfig = DEFAULT_OLLAMA_CONFIG) {
     this.cfg = cfg;
@@ -127,6 +131,7 @@ export class Sim {
   }
 
   reset() {
+    this.cudaTrainer?.invalidate();
     this.world = this.freshWorld();
     this.deliberationCooldowns.clear();
   }
@@ -148,7 +153,7 @@ export class Sim {
     this.traceAgentId = id;
   }
 
-  step(dt: number) {
+  step(dt: number, gpu?: Map<number,{state:Float32Array;probs:Float32Array;value:number}>) {
     if (this.paused) return;
     const cfg = this.cfg;
     const w = this.world;
@@ -171,7 +176,8 @@ export class Sim {
 
       // ---- Curiosity update ----
       const cur = a.curiosity;
-      const state = sense(a, w);
+      const precomputed = gpu?.get(a.id);
+      const state = precomputed?.state ?? sense(a, w);
 
       if (cur.recentStates.length > 0) {
         let minDist = Infinity;
@@ -198,8 +204,10 @@ export class Sim {
       a.inMirror = w.mirrors.some((m) => dist(a.pos, m.pos) < m.radius);
 
       // ---- Brain forward + action ----
-      a.brain.forward(state);
+      if (precomputed) { a.brain.probs.set(precomputed.probs); a.brain.value = precomputed.value; }
+      else a.brain.forward(state);
       const { action, logProb } = a.brain.sampleAction();
+      const estimatedValue = a.brain.value;
       a.lastAction = action;
       a.lastActionName = ACTIONS[action];
 
@@ -413,8 +421,8 @@ export class Sim {
       a.lastReward = reward;
       a.totalReward += reward;
 
-      a.brain.buffer.push({ state, action, logProb, value: a.brain.value, reward, done });
-      if (a.brain.buffer.length >= cfg.trainingInterval) {
+      a.brain.buffer.push({ state, action, logProb, value: estimatedValue, reward, done });
+      if (!this.cudaTrainer && a.brain.buffer.length >= cfg.trainingInterval) {
         a.brain.train(cfg.gamma, cfg.lambda, cfg.learningRate, 0.5, cfg.entropyCoef);
       }
 
@@ -450,6 +458,37 @@ export class Sim {
       }
       this.pushEvent({ kind: "system", text: "Population replenished." });
     }
+  }
+
+  /** GPU path uses batched CUDA policy inference and CUDA training.
+   * The independent CPU step() remains the reference behavior. In GPU mode,
+   * agents observe one pre-action world snapshot per tick rather than
+   * seeing earlier agents' intra-tick movement.
+   */
+  async stepCuda(dt: number): Promise<void> {
+    if(!this.cudaTrainer) { this.step(dt); return; }
+    if(this.paused) return;
+    this.cudaBusy = true;
+    try {
+      // Construct sensor vectors before mutating the world; the independent
+      // CPU path retains its exact original sequential sensing semantics.
+      const futureWorld = {...this.world, t:this.world.t+dt};
+      const inputs = this.world.agents.filter(a=>a.alive).map(a=>({
+        id:a.id,brain:a.brain,state:sense(a,futureWorld)
+      }));
+      const outputs = inputs.length ? await this.cudaTrainer.inferBatch(inputs) :
+        new Map<number,{state:Float32Array;probs:Float32Array;value:number}>();
+      if(this.paused)return;
+      this.step(dt,outputs);
+      if(this.paused)return;
+      const ready = this.world.agents.filter(a => a.alive && a.brain.buffer.length >= this.cfg.trainingInterval);
+      if(ready.length)await this.cudaTrainer.trainBatch(ready.map(a=>({id:a.id,brain:a.brain})),this.cfg);
+    } catch(e) {
+      this.cudaError=String(e).slice(0,220);
+      this.cudaTrainer?.close();this.cudaTrainer=null;
+      this.paused=true;
+      this.pushEvent({kind:"system",text:"CUDA error: simulation paused; restart required, no silent CPU fallback."});
+    } finally { this.cudaBusy=false; }
   }
 
   async stepCognition() {
@@ -574,6 +613,8 @@ export class Sim {
         maxGeneration: maxGen,
         mirrorTestsPassed: mirrorsPassed,
         ollama: this.cognition.getStats(),
+        neuralBackend: this.cudaTrainer ? "CUDA" : "CPU",
+        cudaError: this.cudaError,
       },
     };
   }
