@@ -213,6 +213,13 @@ def dispatch(req: dict, device) -> dict:
                 "gpu": torch.cuda.get_device_name(device) if device.type == "cuda" else None,
                 "torch": torch.__version__}
     if method == "infer_batch":
+        if "activeIds" in req:
+            active = req["activeIds"]
+            if not isinstance(active, list) or len(active) > MAX_ACTIVE_AGENTS or not all(type(v) is int and v > 0 for v in active) or len(set(active)) != len(active):
+                raise ValueError("Invalid active agent list")
+            for cached in list(MODEL_CACHE):
+                if cached not in active:
+                    del MODEL_CACHE[cached]
         return {"id": req["id"], "ok": True, "results": infer_batch(req.get("jobs"), device),
                 "backend": str(device)}
     if method == "invalidate":
