@@ -40,7 +40,7 @@ def main():
     print(json.dumps(info,indent=2))
     if not info["available"]:
         raise SystemExit("No detected NVIDIA CUDA GPU. No packages installed; CPU baseline remains available.")
-    if not any(tuple(g["compute"]) >= (7,0) for g in info["gpus"]):
+    if not any(tuple(g["compute"]) >= (7,5) for g in info["gpus"]):
         raise SystemExit("Unsupported CUDA compute capability; no changes made.")
     capability=max(tuple(g["compute"]) for g in info["gpus"])
     supported=tuple(info.get("driverCuda") or (0,0))
@@ -57,7 +57,7 @@ def main():
     if not ENV.exists():venv.EnvBuilder(with_pip=True).create(ENV)
     python=str(ENV/"bin/python")
     subprocess.run([python,"-m","pip","install","--index-url",index,"torch==2.10.0"],check=True)
-    test=subprocess.run([python,"-c","import torch; assert torch.cuda.is_available();print(torch.cuda.get_device_name(0))"],capture_output=True,text=True)
+    test=subprocess.run([python,"-c","import torch; assert torch.cuda.is_available(); x=torch.ones((8,8),device='cuda'); y=x@x; torch.cuda.synchronize(); assert float(y[0,0])==8; print(torch.cuda.get_device_name(0))"],capture_output=True,text=True)
     if test.returncode:
         raise SystemExit("CUDA verification FAILED. No CPU substitution. "+test.stderr[-300:])
     print("CUDA verification PASS:",test.stdout.strip())
