@@ -24,6 +24,11 @@ from the unchanged CPU baseline. The transfer overhead for tiny models may
 outweigh the benefits of GPU parallelism; actual performance, VRAM usage and
 temperatures must be measured before claims of acceleration.
 
+In CUDA mode the conservative defaults are 10 simulation ticks/second and
+maximum 32 agents. You may configure `LAYER1_GPU_TICK_HZ` from 1 to 20;
+increasing it requires separate heat and stability measurements. The limits
+reduce work, but they cannot guarantee safe temperatures.
+
 CPU baseline: `npm start`. Failure of CUDA startup does **not** silently
 activate CPU. Failure during training pauses the world; inspect the status
 endpoint before any restart. Do not run long stress tests without temperature
