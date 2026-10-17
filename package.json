@@ -1,6 +1,6 @@
 {
   "name": "layer1-neural-world",
-  "version": "1.1.0",
+  "version": "1.2.0-rc.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,9 @@
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "tsc && node --test tests/*.test.mjs",
-    "bridge": "tsx src/engineBridge/index.ts"
+    "bridge": "tsx src/engineBridge/index.ts",
+    "start:cuda": "LAYER1_NEURAL_BACKEND=cuda tsx src/index.ts",
+    "mcp:stdio": "node src/mcp/stdio.mjs"
   },
   "dependencies": {
     "express": "^4.19.2",
