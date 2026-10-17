@@ -18,6 +18,11 @@ def detect():
     except (OSError,subprocess.SubprocessError) as exc:
         return {"available":False,"reason":str(exc)[:200]}
     gpus=[]
+    try:
+        header=subprocess.run(["nvidia-smi"],capture_output=True,text=True,timeout=8,check=True).stdout
+        match=re.search(r"CUDA Version:\\s*(\\d+)\\.(\\d+)",header)
+        driver_cuda=tuple(map(int,match.groups())) if match else None
+    except (OSError,subprocess.SubprocessError):driver_cuda=None
     for line in result.stdout.strip().splitlines():
         cols=[part.strip() for part in line.split(",")]
         if len(cols)<3:continue
@@ -26,7 +31,7 @@ def detect():
             memory=int(cols[2])
             gpus.append({"name":cols[0],"compute":[major,minor],"vramMiB":memory})
         except ValueError:continue
-    return {"available":bool(gpus),"gpus":gpus}
+    return {"available":bool(gpus),"gpus":gpus,"driverCuda":list(driver_cuda) if driver_cuda else None}
 
 def main():
     if sys.platform!="linux":
@@ -37,16 +42,21 @@ def main():
         raise SystemExit("No detected NVIDIA CUDA GPU. No packages installed; CPU baseline remains available.")
     if not any(tuple(g["compute"]) >= (7,0) for g in info["gpus"]):
         raise SystemExit("Unsupported CUDA compute capability; no changes made.")
-    # Compatible tested wheels must be explicitly chosen and audited; using this
-    # index asks PyTorch for the corresponding CUDA-enabled distribution.
-    index="https://download.pytorch.org/whl/cu128"
+    capability=max(tuple(g["compute"]) for g in info["gpus"])
+    supported=tuple(info.get("driverCuda") or (0,0))
+    if capability >= (12,0) and supported < (12,8):
+        raise SystemExit("Blackwell GPU requires driver CUDA capability >= 12.8; update the driver manually.")
+    if supported >= (12,8):channel="cu128"
+    elif supported >= (12,6) and capability < (12,0):channel="cu126"
+    else:raise SystemExit("No approved PyTorch CUDA wheel matches current driver; no changes made.")
+    index="https://download.pytorch.org/whl/"+channel
     print("Planned isolated install: PyTorch from",index)
     if "--install" not in sys.argv:
         print("Dry run only. Run python3 scripts/setup_gpu.py --install to consent.")
         return
     if not ENV.exists():venv.EnvBuilder(with_pip=True).create(ENV)
     python=str(ENV/"bin/python")
-    subprocess.run([python,"-m","pip","install","--index-url",index,"torch"],check=True)
+    subprocess.run([python,"-m","pip","install","--index-url",index,"torch==2.10.0"],check=True)
     test=subprocess.run([python,"-c","import torch; assert torch.cuda.is_available();print(torch.cuda.get_device_name(0))"],capture_output=True,text=True)
     if test.returncode:
         raise SystemExit("CUDA verification FAILED. No CPU substitution. "+test.stderr[-300:])
