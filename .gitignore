@@ -8,3 +8,7 @@ data/
 .DS_Store
 Thumbs.db
 coverage/
+
+.venv/
+__pycache__/
+*.pyc
