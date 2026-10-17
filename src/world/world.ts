@@ -1,4 +1,5 @@
 import { sense } from "./sensors.js";
+import type { CudaTrainer } from "../neural/cudaTrainer.js";
 import type { Agent, Event, World } from "./agent.js";
 import { crossoverGenome, makeAgent } from "./agent.js";
 import { ACTIONS } from "./types.js";
@@ -64,6 +65,8 @@ export class Sim {
   private deliberationCooldowns = new Map<number, number>();
   private traceAgentId: number | null = null;
   private cognitionRunning = false;
+  cudaTrainer: CudaTrainer | null = null;
+  cudaError: string | null = null;
 
   constructor(cfg: Config = DEFAULT_CONFIG, oc: OllamaConfig = DEFAULT_OLLAMA_CONFIG) {
     this.cfg = cfg;
@@ -414,7 +417,7 @@ export class Sim {
       a.totalReward += reward;
 
       a.brain.buffer.push({ state, action, logProb, value: a.brain.value, reward, done });
-      if (a.brain.buffer.length >= cfg.trainingInterval) {
+      if (!this.cudaTrainer && a.brain.buffer.length >= cfg.trainingInterval) {
         a.brain.train(cfg.gamma, cfg.lambda, cfg.learningRate, 0.5, cfg.entropyCoef);
       }
 
@@ -449,6 +452,22 @@ export class Sim {
         );
       }
       this.pushEvent({ kind: "system", text: "Population replenished." });
+    }
+  }
+
+  /** Asynchronous tick: stages CUDA training without blocking the Node event loop. */
+  async stepCuda(dt: number): Promise<void> {
+    this.step(dt);
+    if (!this.cudaTrainer || this.paused) return;
+    const ready = this.world.agents.filter(a => a.alive && a.brain.buffer.length >= this.cfg.trainingInterval);
+    if (!ready.length) return;
+    try {
+      await this.cudaTrainer.trainBatch(ready.map(a=>({id:a.id,brain:a.brain})),this.cfg);
+    } catch(e) {
+      this.cudaError=String(e).slice(0,220);
+      this.cudaTrainer.close();this.cudaTrainer=null;
+      this.paused=true;
+      this.pushEvent({kind:"system",text:"CUDA error: simulation paused; CPU fallback requires manual restart."});
     }
   }
 
@@ -574,6 +593,8 @@ export class Sim {
         maxGeneration: maxGen,
         mirrorTestsPassed: mirrorsPassed,
         ollama: this.cognition.getStats(),
+        neuralBackend: this.cudaTrainer ? "CUDA-training" : "CPU",
+        cudaError: this.cudaError,
       },
     };
   }
