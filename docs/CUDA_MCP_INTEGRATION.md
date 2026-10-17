@@ -1,6 +1,6 @@
-# Layer 1+ v1.2.0-rc.1 development: CUDA and RoboForge MCP
+# Layer 1+ v1.2.0: CUDA and RoboForge MCP
 
-Status: **experimental; not hardware verified**. Linux-only. No system CUDA driver
+Status: **experimental; CUDA verified on one RTX 5050 laptop; performance and CPU thermal safety not established**. Linux-only. No system CUDA driver
 or toolkit is installed by this repository. This work is not a certified
 performance, thermal, AI, or security release.
 
@@ -21,8 +21,7 @@ state/optimizer/transition snapshots for training. Action sampling, sensors,
 and world physics remain in TypeScript on CPU. GPU mode uses one pre-action
 world snapshot per tick rather than sequential sensing, so behavior may differ
 from the unchanged CPU baseline. The transfer overhead for tiny models may
-outweigh the benefits of GPU parallelism; actual performance, VRAM usage and
-temperatures must be measured before claims of acceleration.
+outweigh the benefits of GPU parallelism; on the owner's RTX 5050, a 20-minute run reached 64 °C maximum GPU temperature and 138 MiB peak VRAM; simulation progressed 678.1s in 1200s (0.565× speed). No acceleration against the CPU baseline has been shown. See [release evidence](RELEASE_V1.2.0.md).
 
 In CUDA mode the conservative defaults are 10 simulation ticks/second and
 maximum 32 agents. You may configure `LAYER1_GPU_TICK_HZ` from 1 to 20;
@@ -33,8 +32,7 @@ After installation, run the **real GPU smoke test**:
 ```sh
 .venv/bin/python scripts/verify_cuda_worker.py
 ```
-It checks CUDA inference and training on the selected NVIDIA GPU, but it is
-not a 20-minute thermal acceptance test. Record GPU/CPU utilization and
+It checks CUDA inference and training on the selected NVIDIA GPU; the owner's separate 20-minute GPU run also passed. Neither proves CPU thermal safety. Record GPU/CPU utilization and
 temperatures separately before extending run times.
 
 CPU baseline: `npm start`. Failure of CUDA startup does **not** silently
