@@ -28,7 +28,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - run: python3 -m py_compile scripts/setup_gpu.py scripts/gpu_diagnostics.py src/neural/torch_worker.py
+      - run: python3 -m py_compile scripts/setup_gpu.py scripts/gpu_diagnostics.py scripts/verify_cuda_worker.py src/neural/torch_worker.py
       - run: python3 -m unittest discover -s tests -p 'test_gpu_worker_contract.py'
       - name: Hardware autodetection dry run (expect graceful no-GPU)
         run: |
