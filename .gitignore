@@ -12,3 +12,6 @@ coverage/
 .venv/
 __pycache__/
 *.pyc
+
+.npm-cache/
+test-logs/
