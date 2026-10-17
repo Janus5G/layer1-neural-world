@@ -1,0 +1,40 @@
+name: CUDA and MCP integration regression
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "scripts/**"
+      - "tests/**"
+      - "package.json"
+      - ".github/workflows/cuda-mcp-ci.yml"
+  push:
+    branches:
+      - "feature/gpu-auto-detection-pytorch-cuda-mcp"
+permissions:
+  contents: read
+jobs:
+  cpu-and-mcp:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: python3 -m py_compile scripts/setup_gpu.py scripts/gpu_diagnostics.py src/neural/torch_worker.py
+      - name: Hardware autodetection dry run (expect graceful no-GPU)
+        run: |
+          python3 scripts/setup_gpu.py > gpu-diagnostic.txt && exit 0 || test $? -eq 1
+      - name: Check no accidental GPU packages
+        run: |
+          test ! -d .venv
+      - name: Security hygiene
+        run: |
+          ! grep -R -nE '(CUDA_VISIBLE_DEVICES=|curl .+\| bash|wget .+\| sh)' scripts src/neural
