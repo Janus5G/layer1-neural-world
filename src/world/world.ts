@@ -67,6 +67,7 @@ export class Sim {
   private cognitionRunning = false;
   cudaTrainer: CudaTrainer | null = null;
   cudaError: string | null = null;
+  cudaBusy = false;
 
   constructor(cfg: Config = DEFAULT_CONFIG, oc: OllamaConfig = DEFAULT_OLLAMA_CONFIG) {
     this.cfg = cfg;
@@ -461,6 +462,7 @@ export class Sim {
     if (!this.cudaTrainer || this.paused) return;
     const ready = this.world.agents.filter(a => a.alive && a.brain.buffer.length >= this.cfg.trainingInterval);
     if (!ready.length) return;
+    this.cudaBusy = true;
     try {
       await this.cudaTrainer.trainBatch(ready.map(a=>({id:a.id,brain:a.brain})),this.cfg);
     } catch(e) {
@@ -468,7 +470,7 @@ export class Sim {
       this.cudaTrainer.close();this.cudaTrainer=null;
       this.paused=true;
       this.pushEvent({kind:"system",text:"CUDA error: simulation paused; CPU fallback requires manual restart."});
-    }
+    } finally { this.cudaBusy = false; }
   }
 
   async stepCognition() {
