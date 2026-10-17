@@ -48,7 +48,7 @@ app.post("/api/control", (req, res) => {
 });
 
 app.get("/api/status", (_req, res) => {
-  res.json({ ok: true, paused: sim.paused, t: sim.world.t, pop: sim.world.agents.length, neuralBackend: sim.cudaTrainer ? "cuda-training" : "cpu", cudaError: sim.cudaError });
+  res.json({ ok: true, paused: sim.paused, t: sim.world.t, pop: sim.world.agents.length, neuralBackend: sim.cudaTrainer ? "cuda" : "cpu", cudaError: sim.cudaError });
 });
 
 // ---- Brain trace ----
