@@ -4,23 +4,29 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import venv
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-ENV=ROOT/".venv"
+ENV=Path(os.environ.get("LAYER1_VENV_DIR", str(ROOT/".venv"))).expanduser()
 def detect():
+    executable = shutil.which("nvidia-smi")
+    if executable is None and Path("/usr/lib/wsl/lib/nvidia-smi").is_file():
+        executable = "/usr/lib/wsl/lib/nvidia-smi"
+    if executable is None:
+        return {"available":False,"reason":"nvidia-smi not found (no driver installed by this script)"}
     try:
-        result=subprocess.run(["nvidia-smi","--query-gpu=name,compute_cap,memory.total","--format=csv,noheader,nounits"],
+        result=subprocess.run([executable,"--query-gpu=name,compute_cap,memory.total","--format=csv,noheader,nounits"],
                               capture_output=True,text=True,timeout=8,check=True)
     except (OSError,subprocess.SubprocessError) as exc:
         return {"available":False,"reason":str(exc)[:200]}
     gpus=[]
     try:
-        header=subprocess.run(["nvidia-smi"],capture_output=True,text=True,timeout=8,check=True).stdout
-        match=re.search(r"CUDA Version:\s*(\d+)\.(\d+)",header)
+        header=subprocess.run([executable],capture_output=True,text=True,timeout=8,check=True).stdout
+        match=re.search(r"CUDA(?:\s+UMD)?\s+Version:\s*(\d+)\.(\d+)",header,flags=re.IGNORECASE)
         driver_cuda=tuple(map(int,match.groups())) if match else None
     except (OSError,subprocess.SubprocessError):driver_cuda=None
     for line in result.stdout.strip().splitlines():
@@ -54,9 +60,11 @@ def main():
     if "--install" not in sys.argv:
         print("Dry run only. Run python3 scripts/setup_gpu.py --install to consent.")
         return
+    if not ENV.is_absolute():
+        raise SystemExit("LAYER1_VENV_DIR must be absolute; no changes made.")
     if not ENV.exists():venv.EnvBuilder(with_pip=True).create(ENV)
     python=str(ENV/"bin/python")
-    subprocess.run([python,"-m","pip","install","--index-url",index,"torch==2.10.0"],check=True)
+    subprocess.run([python,"-m","pip","install","--no-cache-dir","--index-url",index,"torch==2.10.0"],check=True)
     test=subprocess.run([python,"-c","import torch; assert torch.cuda.is_available(); x=torch.ones((8,8),device='cuda'); y=x@x; torch.cuda.synchronize(); assert float(y[0,0])==8; print(torch.cuda.get_device_name(0))"],capture_output=True,text=True)
     if test.returncode:
         raise SystemExit("CUDA verification FAILED. No CPU substitution. "+test.stderr[-300:])
