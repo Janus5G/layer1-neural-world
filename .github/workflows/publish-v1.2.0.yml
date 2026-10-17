@@ -1,0 +1,42 @@
+name: Publish Layer 1+ v1.2.0 Linux source release
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-v1.2.0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: layer1-v1.2.0-publication
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.repository == 'Janus5G/layer1-neural-world' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify exact version and notes
+        run: |
+          node -e "if(require('./package.json').version!=='1.2.0'||require('./package-lock.json').version!=='1.2.0')process.exit(1)"
+          test -s docs/RELEASE_V1.2.0.md
+      - name: Verify locked JavaScript source
+        run: |
+          npm ci --no-audit --no-fund
+          npm run typecheck
+          npm test
+      - name: Publish source tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v1.2.0 >/dev/null 2>&1; then
+            echo "v1.2.0 release already exists; preserving it."
+            exit 0
+          fi
+          gh release create v1.2.0 --target "${GITHUB_SHA}" --title "Layer 1+ v1.2.0 — Linux CUDA and local MCP" --notes-file docs/RELEASE_V1.2.0.md --latest
