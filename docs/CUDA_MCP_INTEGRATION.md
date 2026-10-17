@@ -1,4 +1,4 @@
-# Layer 1+ v1.2.0 development: CUDA and RoboForge MCP
+# Layer 1+ v1.2.0-rc.1 development: CUDA and RoboForge MCP
 
 Status: **experimental; not hardware verified**. Linux-only. No system CUDA driver
 or toolkit is installed by this repository. This work is not a certified
@@ -8,7 +8,7 @@ performance, thermal, AI, or security release.
 Run `python3 scripts/setup_gpu.py` to inspect the available NVIDIA GPU via
 `nvidia-smi`, and then `python3 scripts/setup_gpu.py --install` to explicitly
 install the CUDA-enabled PyTorch wheel into the repository-local `.venv`.
-The selected CUDA wheel channel is cu128; the installer validates actual CUDA
+The selected CUDA wheel channel is cu126 or cu128 based on reported NVIDIA driver capability and GPU generation; the installer validates actual CUDA
 execution and stops on failure. It does not upgrade the host GPU driver. You
 must install a compatible NVIDIA driver using your OS package management.
 PyTorch CUDA wheel support and driver compatibility must be checked on the
