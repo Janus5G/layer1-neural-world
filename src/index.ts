@@ -8,7 +8,10 @@ import { DEFAULT_OLLAMA_CONFIG, type OllamaConfig } from "./cognition/ollama.js"
 import { startEngineBridge } from "./engineBridge/server.js";
 
 let ollamaConfig: OllamaConfig = { ...DEFAULT_OLLAMA_CONFIG };
-const sim = new Sim(DEFAULT_CONFIG, ollamaConfig);
+const gpuRequested=process.env.LAYER1_NEURAL_BACKEND==="cuda";
+const gpuTickRequested=Number(process.env.LAYER1_GPU_TICK_HZ??10);
+const gpuTickHz=Number.isFinite(gpuTickRequested)&&gpuTickRequested>=1&&gpuTickRequested<=20 ? gpuTickRequested : 10;
+const sim = new Sim(gpuRequested?{...DEFAULT_CONFIG,maxPopulation:32}:DEFAULT_CONFIG, ollamaConfig);
 if (process.env.LAYER1_NEURAL_BACKEND === "cuda") {
   try {sim.cudaTrainer = await CudaTrainer.start();console.log("CUDA training enabled");}
   catch(e){sim.cudaError=String(e).slice(0,220);console.error("CUDA unavailable; refusing silent fallback:",e);process.exit(2);}
@@ -79,7 +82,7 @@ wss.on("connection", (ws) => {
 });
 
 // Sim-loop: 20 Hz
-const TICK_HZ = 20;
+const TICK_HZ = gpuRequested ? gpuTickHz : 20;
 const tickMs = 1000 / TICK_HZ;
 let last = performance.now();
 let tickBusy=false;
