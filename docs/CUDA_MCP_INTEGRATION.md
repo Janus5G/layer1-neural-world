@@ -29,6 +29,14 @@ maximum 32 agents. You may configure `LAYER1_GPU_TICK_HZ` from 1 to 20;
 increasing it requires separate heat and stability measurements. The limits
 reduce work, but they cannot guarantee safe temperatures.
 
+After installation, run the **real GPU smoke test**:
+```sh
+.venv/bin/python scripts/verify_cuda_worker.py
+```
+It checks CUDA inference and training on the selected NVIDIA GPU, but it is
+not a 20-minute thermal acceptance test. Record GPU/CPU utilization and
+temperatures separately before extending run times.
+
 CPU baseline: `npm start`. Failure of CUDA startup does **not** silently
 activate CPU. Failure during training pauses the world; inspect the status
 endpoint before any restart. Do not run long stress tests without temperature
