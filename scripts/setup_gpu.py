@@ -20,7 +20,7 @@ def detect():
     gpus=[]
     try:
         header=subprocess.run(["nvidia-smi"],capture_output=True,text=True,timeout=8,check=True).stdout
-        match=re.search(r"CUDA Version:\\s*(\\d+)\\.(\\d+)",header)
+        match=re.search(r"CUDA Version:\s*(\d+)\.(\d+)",header)
         driver_cuda=tuple(map(int,match.groups())) if match else None
     except (OSError,subprocess.SubprocessError):driver_cuda=None
     for line in result.stdout.strip().splitlines():
