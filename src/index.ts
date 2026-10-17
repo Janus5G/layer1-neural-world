@@ -103,7 +103,7 @@ setInterval(() => {
 }, 100);
 
 const PORT = Number(process.env.PORT ?? 8787);
-server.listen(PORT, () => {
+server.listen(PORT, "127.0.0.1", () => {
   console.log(`Layer 1+ is running at http://localhost:${PORT}`);
   console.log(
     `  Ollama: ${
