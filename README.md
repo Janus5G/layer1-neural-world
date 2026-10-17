@@ -1,12 +1,19 @@
 # Layer 1+ — Neural Artificial Life Sandbox
 
+[![Version v1.2.0](https://img.shields.io/badge/Release-v1.2.0-0A7B83.svg)](https://github.com/Janus5G/layer1-neural-world/releases/tag/v1.2.0)
 [![Engine Bridge regression](https://github.com/Janus5G/layer1-neural-world/actions/workflows/engine-bridge-tests.yml/badge.svg?branch=main)](https://github.com/Janus5G/layer1-neural-world/actions/workflows/engine-bridge-tests.yml)
+[![CUDA and MCP regression](https://github.com/Janus5G/layer1-neural-world/actions/workflows/cuda-mcp-ci.yml/badge.svg?branch=main)](https://github.com/Janus5G/layer1-neural-world/actions/workflows/cuda-mcp-ci.yml)
 [![MIT License](https://img.shields.io/badge/License-MIT-28a745.svg)](LICENSE)
+[![Linux source](https://img.shields.io/badge/Platform-Linux-4A772F.svg?logo=linux&logoColor=white)](docs/RELEASE_V1.2.0.md)
+[![Optional CUDA](https://img.shields.io/badge/NVIDIA_CUDA-Optional-387F3F.svg)](docs/CUDA_MCP_INTEGRATION.md)
+[![Local MCP read-only](https://img.shields.io/badge/MCP-Local_Read--Only-276B9C.svg)](integrations/roboforge/README.md)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-43853D?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Engine Bridge: experimental](https://img.shields.io/badge/Engine_Bridge-Experimental-orange)](docs/ENGINE_BRIDGE.md)
 
 A small **experimental artificial-life simulation** with embodied neural agents in a browser-based world. Agents use hand-written neural networks to select actions, receive rewards, move around, interact, reproduce, and explore. An **optional local Ollama model** generates short agent narratives and ideas.
+
+**v1.2.0:** Optional Linux-only PyTorch/CUDA neural inference and training, plus a **local read-only MCP** adapter for future RoboForge integration. The CUDA backend completed a 20-minute RTX 5050 test (64 °C maximum observed GPU temperature), but CPU temperature and a speedup over the CPU reference were not verified. See the [release evidence](docs/RELEASE_V1.2.0.md).
 
 **Status:** This repository contains the original experimental **Layer 1 / 1+ source**, translated into English. It is released **as-is**. The author does **not** plan additional levels or ongoing feature development; community forks are welcome. Later layers in [the roadmap](docs/ROADMAP.md) are historical ideas, **not built features**.
 
