@@ -20,6 +20,61 @@ LAYERS = ((40, 48), (48, 48), (48, 11), (48, 1))
 FIELDS = ("W", "b", "mW", "vW", "mb", "vb")
 torch = None
 
+# Cache GPU-resident model weights for batched forward passes.
+# Models are registered by their owner process, never loaded from files.
+MODEL_CACHE = {}
+MAX_ACTIVE_AGENTS = 128
+
+def infer_batch(jobs: list, device) -> list:
+    if not isinstance(jobs, list) or not 1 <= len(jobs) <= MAX_ACTIVE_AGENTS:
+        raise ValueError("Invalid inference batch size")
+    if len({j.get("id") for j in jobs if isinstance(j, dict)}) != len(jobs):
+        raise ValueError("Duplicate agent in inference batch")
+    for item in jobs:
+        if not isinstance(item, dict) or type(item.get("id")) is not int or item["id"] < 1:
+            raise ValueError("Invalid inference agent")
+        if not set(item).issubset({"id", "state", "layers"}):
+            raise ValueError("Unexpected inference keys")
+        verify_vector(item.get("state"), 40)
+        if "layers" in item:
+            source = item["layers"]
+            if not isinstance(source, list) or len(source) != 4:
+                raise ValueError("Invalid inference model")
+            params = []
+            for obj, (n_in, n_out) in zip(source, LAYERS):
+                if not isinstance(obj, dict) or set(obj) != {"W", "b"}:
+                    raise ValueError("Invalid inference layer")
+                verify_vector(obj["W"], n_in*n_out)
+                verify_vector(obj["b"], n_out)
+                params.append((
+                    torch.tensor(obj["W"], device=device, dtype=torch.float32).reshape(n_out,n_in),
+                    torch.tensor(obj["b"], device=device, dtype=torch.float32)
+                ))
+            MODEL_CACHE[item["id"]] = params
+        elif item["id"] not in MODEL_CACHE:
+            raise ValueError("Agent neural model not registered")
+    if len(MODEL_CACHE) > MAX_ACTIVE_AGENTS:
+        raise ValueError("GPU model cache capacity exceeded")
+
+    with torch.inference_mode():
+        ids = [x["id"] for x in jobs]
+        x = torch.tensor([j["state"] for j in jobs], device=device,dtype=torch.float32).unsqueeze(-1)
+        for k in range(2):
+            w=torch.stack([MODEL_CACHE[i][k][0] for i in ids])
+            b=torch.stack([MODEL_CACHE[i][k][1] for i in ids])
+            x=torch.relu(torch.bmm(w,x).squeeze(-1)+b).unsqueeze(-1)
+        pol_w=torch.stack([MODEL_CACHE[i][2][0] for i in ids])
+        pol_b=torch.stack([MODEL_CACHE[i][2][1] for i in ids])
+        val_w=torch.stack([MODEL_CACHE[i][3][0] for i in ids])
+        val_b=torch.stack([MODEL_CACHE[i][3][1] for i in ids])
+        logits=torch.bmm(pol_w,x).squeeze(-1)+pol_b
+        values=(torch.bmm(val_w,x).squeeze(-1)+val_b).squeeze(-1)
+        probabilities=torch.softmax(logits,dim=-1)
+        out_probs=probabilities.cpu().tolist()
+        out_values=values.cpu().tolist()
+    return [{"id":i,"probs":p,"value":v} for i,p,v in zip(ids,out_probs,out_values)]
+
+
 
 def respond(obj: dict) -> None:
     sys.stdout.write(json.dumps(obj, separators=(",", ":"), allow_nan=False) + "\n")
@@ -157,6 +212,12 @@ def dispatch(req: dict, device) -> dict:
         return {"id": req["id"], "ok": True, "backend": str(device),
                 "gpu": torch.cuda.get_device_name(device) if device.type == "cuda" else None,
                 "torch": torch.__version__}
+    if method == "infer_batch":
+        return {"id": req["id"], "ok": True, "results": infer_batch(req.get("jobs"), device),
+                "backend": str(device)}
+    if method == "invalidate":
+        MODEL_CACHE.clear()
+        return {"id": req["id"], "ok": True, "backend": str(device)}
     if method != "train_batch":
         raise ValueError("Unknown worker method")
     jobs = req.get("jobs")
@@ -173,6 +234,16 @@ def dispatch(req: dict, device) -> dict:
     if len({j.get("id") for j in jobs if isinstance(j, dict)}) != len(jobs):
         raise ValueError("Duplicate agent ID")
     results = [train_job(j, device, opt) for j in jobs]
+    # Synchronize cache after training so next GPU inference sees updated policy.
+    for result in results:
+        if result["id"] in MODEL_CACHE:
+            params = []
+            for obj, (n_in,n_out) in zip(result["layers"], LAYERS):
+                params.append((
+                    torch.tensor(obj["W"],device=device,dtype=torch.float32).reshape(n_out,n_in),
+                    torch.tensor(obj["b"],device=device,dtype=torch.float32)
+                ))
+            MODEL_CACHE[result["id"]] = params
     return {"id": req["id"], "ok": True, "results": results, "backend": str(device)}
 
 
