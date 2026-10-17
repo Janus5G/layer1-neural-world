@@ -14,14 +14,15 @@ must install a compatible NVIDIA driver using your OS package management.
 PyTorch CUDA wheel support and driver compatibility must be checked on the
 target machine.
 
-Run `npm ci`, then `LAYER1_NEURAL_BACKEND=cuda npm start` to enable
-PyTorch CUDA **training**. Forward passes, action sampling, sensors, and world
-physics remain in TypeScript on CPU. CPU use is therefore not eliminated.
-Training work is performed asynchronously on the GPU worker using serialized
-snapshots of each agent's weights, Adam moments and transitions. Unlike a
-fully GPU-resident neural simulation this may not improve performance for
-small populations. It must be profiled on real hardware; 8 GB VRAM alone is
-not a guarantee of speed or acceptable temperatures.
+Run `npm ci`, then `npm run start:cuda` to enable PyTorch CUDA
+**batched neural forward inference and training**. The CUDA worker caches
+agent networks on the GPU for forward inference and accepts bounded
+state/optimizer/transition snapshots for training. Action sampling, sensors,
+and world physics remain in TypeScript on CPU. GPU mode uses one pre-action
+world snapshot per tick rather than sequential sensing, so behavior may differ
+from the unchanged CPU baseline. The transfer overhead for tiny models may
+outweigh the benefits of GPU parallelism; actual performance, VRAM usage and
+temperatures must be measured before claims of acceleration.
 
 CPU baseline: `npm start`. Failure of CUDA startup does **not** silently
 activate CPU. Failure during training pauses the world; inspect the status
